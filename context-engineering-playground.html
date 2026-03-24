@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Engineering Playground</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;--bg2:#111827;--bg3:#1a2035;--bg4:#232b42;
+  --border:#2a3352;--border2:#3a4572;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --accent:#6366f1;--accent2:#818cf8;--accent3:#4f46e5;
+  --green:#22c55e;--green2:#16a34a;--green-bg:rgba(34,197,94,.08);
+  --orange:#f59e0b;--orange-bg:rgba(245,158,11,.08);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.08);
+  --fire:#ff6b35;
+  --radius:12px;--radius-sm:8px;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Plus Jakarta Sans',sans-serif;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* ─── Header ─── */
+.header{
+  padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px);
+}
+.header-left h1{font-size:1.35rem;font-weight:800;background:linear-gradient(135deg,var(--accent2),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-left p{font-size:.75rem;color:var(--text3);margin-top:2px;letter-spacing:.3px}
+.header-right{display:flex;gap:.75rem;align-items:center}
+
+/* ─── Sample Prompt Selector ─── */
+.sample-selector{
+  display:flex;align-items:center;gap:.5rem;
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:.4rem .75rem;
+}
+.sample-selector label{font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;white-space:nowrap}
+.sample-selector select{
+  background:var(--bg4);border:1px solid var(--border);color:var(--text);font-family:var(--sans);
+  font-size:.8rem;padding:.35rem .6rem;border-radius:var(--radius-sm);cursor:pointer;min-width:220px;
+}
+.sample-desc{font-size:.7rem;color:var(--text3);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
+
+/* ─── Layout ─── */
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 56px)}
+
+/* ─── Sidebar ─── */
+.sidebar{
+  background:var(--bg2);border-right:1px solid var(--border);padding:1.25rem 1rem;
+  position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;
+}
+.sidebar-title{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:700;margin-bottom:.75rem}
+.sidebar-sub{font-size:.65rem;color:var(--text3);margin-bottom:1rem}
+.nav-item{
+  display:flex;align-items:center;gap:.6rem;padding:.55rem .65rem;border-radius:var(--radius-sm);
+  cursor:pointer;transition:all .15s;margin-bottom:.25rem;
+}
+.nav-item:hover{background:var(--bg3)}
+.nav-item.active{background:var(--accent3);color:#fff}
+.nav-num{
+  width:22px;height:22px;border-radius:50%;background:var(--accent3);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;
+}
+.nav-item.active .nav-num{background:rgba(255,255,255,.25)}
+.nav-label{font-size:.78rem;font-weight:500;line-height:1.3}
+.nav-tokens{font-size:.65rem;color:var(--text3);margin-left:auto;font-family:var(--mono);flex-shrink:0}
+.nav-fire{font-size:.75rem;margin-left:2px}
+
+/* ─── Main ─── */
+.main{padding:2rem 2.5rem;max-width:920px}
+.main-header{margin-bottom:1.75rem}
+.main-header h2{font-size:1.5rem;font-weight:800;margin-bottom:.35rem}
+.main-header p{color:var(--text3);font-size:.8rem}
+
+/* ─── Model Card ─── */
+.model-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.5rem;
+}
+.model-card-title{font-size:.8rem;font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+.model-card-title span{font-size:1rem}
+.model-row{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+.model-row label{font-size:.75rem;color:var(--text3);font-weight:600;min-width:50px}
+.model-row select{
+  flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  font-family:var(--sans);font-size:.85rem;padding:.5rem .75rem;border-radius:var(--radius-sm);cursor:pointer;
+}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.stat{padding:.5rem 0}
+.stat-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:600;margin-bottom:.25rem}
+.stat-value{font-size:1.05rem;font-weight:700;font-family:var(--mono)}
+.stat-value.green{color:var(--green)}
+.stat-value.orange{color:var(--orange)}
+.stat-value.red{color:var(--red)}
+
+/* ─── Context Bar ─── */
+.context-bar-wrap{margin-top:.75rem}
+.context-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;position:relative}
+.context-bar-fill{height:100%;border-radius:3px;transition:width .4s ease,background .4s ease}
+.context-bar-fill.green{background:linear-gradient(90deg,var(--green2),var(--green))}
+.context-bar-fill.orange{background:linear-gradient(90deg,#d97706,var(--orange))}
+.context-bar-fill.red{background:linear-gradient(90deg,#dc2626,var(--red))}
+
+/* ─── Token Details Toggle ─── */
+.toggle-btn{
+  font-size:.72rem;color:var(--text3);cursor:pointer;padding:.35rem 0;display:flex;align-items:center;gap:.3rem;
+  border:none;background:none;font-family:var(--sans);
+}
+.toggle-btn:hover{color:var(--text)}
+.token-details{display:none;margin-top:.5rem}
+.token-details.open{display:block}
+.token-row{display:flex;justify-content:space-between;padding:.3rem .5rem;font-size:.72rem;border-radius:4px}
+.token-row:nth-child(odd){background:var(--bg3)}
+.token-row .tl{color:var(--text2)}
+.token-row .tv{font-family:var(--mono);color:var(--text)}
+.token-row .tp{font-family:var(--mono);color:var(--text3);min-width:50px;text-align:right}
+
+/* ─── Section Cards ─── */
+.section-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.25rem 1.5rem;margin-bottom:1rem;transition:border-color .2s;
+}
+.section-card:hover{border-color:var(--border2)}
+.section-card:focus-within{border-color:var(--accent)}
+.section-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.15rem}
+.section-card-title{display:flex;align-items:center;gap:.5rem}
+.section-card-title .num{
+  width:24px;height:24px;border-radius:50%;background:var(--accent3);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;
+}
+.section-card-title h3{font-size:.95rem;font-weight:700}
+.section-card-title .fire{font-size:.85rem;margin-left:.15rem}
+.token-badge{
+  font-size:.7rem;font-family:var(--mono);color:var(--text3);
+  background:var(--bg3);padding:.2rem .55rem;border-radius:10px;
+}
+.section-hint{font-size:.72rem;color:var(--text3);font-style:italic;margin:.4rem 0 .65rem 0}
+.section-card textarea{
+  width:100%;min-height:100px;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);font-family:var(--mono);font-size:.8rem;line-height:1.65;
+  padding:.85rem 1rem;border-radius:var(--radius-sm);resize:vertical;transition:border-color .2s;
+}
+.section-card textarea:focus{outline:none;border-color:var(--accent)}
+.section-card textarea::placeholder{color:var(--text3)}
+
+/* ─── Context Rot Panel ─── */
+.rot-panel{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.5rem;margin-top:2rem;
+}
+.rot-panel h3{font-size:1.05rem;font-weight:700;margin-bottom:.35rem;display:flex;align-items:center;gap:.4rem}
+.rot-panel h3 span{font-size:1.1rem}
+.rot-panel>p{font-size:.78rem;color:var(--text3);margin-bottom:1rem}
+.rot-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+.rot-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.85rem 1rem;
+}
+.rot-card-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.35rem}
+.rot-card-title.warn{color:var(--orange)}
+.rot-card-title.danger{color:var(--red)}
+.rot-card-title.ok{color:var(--green)}
+.rot-card p{font-size:.72rem;color:var(--text2);line-height:1.5}
+.rot-meter{margin-top:1rem}
+.rot-meter-label{display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:.35rem}
+.rot-meter-label span:first-child{color:var(--text2);font-weight:600}
+.rot-meter-label span:last-child{font-family:var(--mono);font-weight:700}
+.rot-meter-bar{height:8px;background:var(--bg4);border-radius:4px;overflow:hidden}
+.rot-meter-fill{height:100%;border-radius:4px;transition:width .5s ease,background .5s ease}
+
+/* ─── Try It Box ─── */
+.try-it{
+  background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(34,197,94,.08));
+  border:1px dashed var(--accent);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-top:2rem;
+  position:relative;overflow:hidden;
+}
+.try-it::before{
+  content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;
+  background:radial-gradient(circle,rgba(99,102,241,.12),transparent 70%);border-radius:50%;
+}
+.try-it h3{font-size:.95rem;font-weight:700;margin-bottom:.25rem;display:flex;align-items:center;gap:.4rem}
+.try-it h3 span{font-size:1rem}
+.try-it>p{font-size:.78rem;color:var(--text2);margin-bottom:.85rem;line-height:1.55}
+.try-it-steps{margin-bottom:1rem}
+.try-it-step{
+  display:flex;gap:.6rem;align-items:flex-start;margin-bottom:.5rem;font-size:.78rem;color:var(--text2);line-height:1.5;
+}
+.try-it-step .step-num{
+  min-width:20px;height:20px;border-radius:50%;background:var(--accent3);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;margin-top:1px;
+}
+.try-it-copy-area{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:.75rem 1rem;font-family:var(--mono);font-size:.72rem;color:var(--text2);line-height:1.7;
+  position:relative;max-height:140px;overflow-y:auto;white-space:pre-wrap;
+}
+.try-it-copy-btn{
+  position:absolute;top:.5rem;right:.5rem;background:var(--accent3);color:#fff;border:none;
+  font-family:var(--sans);font-size:.65rem;font-weight:600;padding:.3rem .6rem;border-radius:6px;
+  cursor:pointer;transition:all .15s;z-index:2;
+}
+.try-it-copy-btn:hover{background:var(--accent)}
+.try-it-copy-btn.copied{background:var(--green2)}
+.try-it-note{font-size:.68rem;color:var(--text3);margin-top:.65rem;font-style:italic}
+
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>Context Engineering Playground</h1>
+    <p>Design structured prompts · Explore context utilization · No LLM calls</p>
+  </div>
+  <div class="header-right">
+    <div class="sample-selector">
+      <label>Sample Prompt:</label>
+      <select id="sampleSelect">
+        <option value="">— Start from scratch —</option>
+        <option value="donor">Donor Data Analysis — Excel (Anonymous)</option>
+        <option value="grant">Grant Writing — Community Foundation</option>
+        <option value="newsletter">Newsletter — Monthly Roundup</option>
+        <option value="event">Event Planning — Volunteer Coordination</option>
+      </select>
+    </div>
+    <div class="sample-desc" id="sampleDesc"></div>
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-title">Prompt structure</div>
+    <div class="sidebar-sub">Click a section to jump to its editor.</div>
+    <div id="navList"></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="main-header">
+      <h2>Build Your Prompt</h2>
+      <p>Fill each section to construct your prompt. Token counts update live.</p>
+    </div>
+
+    <!-- Model Card -->
+    <div class="model-card">
+      <div class="model-card-title"><span>🎯</span> Model &amp; Context</div>
+      <div class="model-row">
+        <label>Model</label>
+        <select id="modelSelect">
+          <option value="128000" data-name="GPT-4.1 Mini (OpenAI)">GPT-4.1 Mini (OpenAI)</option>
+          <option value="200000" data-name="Claude Sonnet 4 (Anthropic)" selected>Claude Sonnet 4 (Anthropic)</option>
+          <option value="200000" data-name="Claude Opus 4 (Anthropic)">Claude Opus 4 (Anthropic)</option>
+          <option value="128000" data-name="GPT-4o (OpenAI)">GPT-4o (OpenAI)</option>
+          <option value="1000000" data-name="Gemini 2.5 Pro (Google)">Gemini 2.5 Pro (Google)</option>
+          <option value="128000" data-name="Llama 4 Scout (Meta)">Llama 4 Scout (Meta)</option>
+          <option value="32000" data-name="Mistral Medium (Mistral)">Mistral Medium (Mistral)</option>
+        </select>
+      </div>
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label">Context Window</div>
+          <div class="stat-value" id="statWindow">200,000 tokens</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total Prompt Tokens</div>
+          <div class="stat-value" id="statTokens">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Context Utilization</div>
+          <div class="stat-value green" id="statUtil">0 / 200,000 = 0%</div>
+        </div>
+      </div>
+      <div class="context-bar-wrap">
+        <div class="context-bar"><div class="context-bar-fill green" id="ctxBar" style="width:0%"></div></div>
+      </div>
+      <button class="toggle-btn" id="toggleDetails">▸ Token usage details</button>
+      <div class="token-details" id="tokenDetails"></div>
+    </div>
+
+    <!-- Section Cards (generated by JS) -->
+    <div id="sectionCards"></div>
+
+    <!-- Try It Box -->
+    <div class="try-it">
+      <h3><span>🧑‍🔬</span> Try It: Watch Context Rot in Real Time</h3>
+      <p>Want to see how quickly a model’s attention degrades? Follow these steps to simulate a bloated prompt and watch the risk meter climb.</p>
+      <div class="try-it-steps">
+        <div class="try-it-step"><div class="step-num">1</div><div>Select <strong>“Donor Data Analysis”</strong> from the Sample Prompt dropdown above. Notice the rot meter shows <strong>Low Risk</strong>.</div></div>
+        <div class="try-it-step"><div class="step-num">2</div><div>Click <strong>“Copy Text”</strong> below to grab the sample conversation block, then paste it into the <strong>Conversation History</strong> box (section 6). Paste it <strong>10 times</strong>.</div></div>
+        <div class="try-it-step"><div class="step-num">3</div><div>Watch the rot meter, instruction retention, and example recall cards update in real time as the context fills up.</div></div>
+        <div class="try-it-step"><div class="step-num">4</div><div>Now switch the model from <strong>Claude Sonnet 4 (200K)</strong> to <strong>Mistral Medium (32K)</strong> — same prompt, dramatically different risk.</div></div>
+        <div class="try-it-step"><div class="step-num">5</div><div>Try trimming the history back down. Notice how the risk drops. <strong>This is why concise context engineering matters.</strong></div></div>
+      </div>
+      <div style="position:relative">
+        <button class="try-it-copy-btn" id="copyBtn">Copy Text</button>
+        <div class="try-it-copy-area" id="tryText">User: Can you analyze the Q3 donor retention numbers? I’m seeing a dip in recurring gifts and want to understand if it’s seasonal or if we’re losing donors permanently. Also, the board is asking for a year-over-year comparison.
+
+Assistant: Looking at the Q3 data, I can see a 12% decline in recurring gift retention compared to Q2. Your “Loyal Recurring” donors (monthly gifts for 12+ months) are stable at 94% retention. The dip is concentrated in newer recurring donors (under 6 months) where retention dropped from 71% to 58%.
+
+User: That’s helpful. Can you also pull the lapsed donor numbers? And cross-reference with the golf tournament attendees? I want to see if event donors are converting to recurring.
+
+Assistant: Of the 340 golf tournament donors from 2024, only 23 (6.8%) converted to recurring gifts. However, their average one-time gift was $475, well above your $180 average. The gap suggests a stewardship opportunity rather than disinterest.</div>
+      </div>
+      <p class="try-it-note">💡 Tip: After pasting 10 times, the Conversation History section alone will consume thousands of tokens. This simulates what happens in a real multi-turn chat where context accumulates and early instructions get pushed out of the model’s attention window.</p>
+    </div>
+
+    <!-- Context Rot Panel -->
+    <div class="rot-panel">
+      <h3><span>🧪</span> Context Rot Simulator</h3>
+      <p>As prompts grow longer and conversations deepen, models lose track of early instructions. This panel estimates how your prompt would degrade.</p>
+      <div class="rot-grid">
+        <div class="rot-card">
+          <div class="rot-card-title ok" id="rotTitle1">Low Risk</div>
+          <p id="rotDesc1">Your prompt is compact. Models will maintain strong attention across all sections.</p>
+        </div>
+        <div class="rot-card">
+          <div class="rot-card-title ok" id="rotTitle2">Instruction Retention</div>
+          <p id="rotDesc2">Estimated ~99% of your rules and constraints will be followed accurately.</p>
+        </div>
+        <div class="rot-card">
+          <div class="rot-card-title ok" id="rotTitle3">Example Recall</div>
+          <p id="rotDesc3">All examples are within the model’s peak attention window.</p>
+        </div>
+        <div class="rot-card">
+          <div class="rot-card-title ok" id="rotTitle4">Recommendations</div>
+          <p id="rotDesc4">No changes needed. Your prompt structure is solid.</p>
+        </div>
+      </div>
+      <div class="rot-meter">
+        <div class="rot-meter-label">
+          <span>Context Rot Risk</span>
+          <span id="rotPercent">Low (2%)</span>
+        </div>
+        <div class="rot-meter-bar"><div class="rot-meter-fill" id="rotBar" style="width:2%;background:var(--green)"></div></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Built for the <a href="#">AI Education Workshop</a> · No data leaves your browser · Tokens are estimated (~4 chars/token)
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Section Definitions ───
+const sections = [
+  { id:'task', num:1, label:'Task context', hint:'Describe the role or persona the model should adopt and the high-level goal of the interaction.', fire:false },
+  { id:'tone', num:2, label:'Tone context', hint:'Specify the desired tone, formality, and communication style.', fire:false },
+  { id:'background', num:3, label:'Background data, documents, and images', hint:'Paste or reference supporting data, documents, or images the model needs.', fire:true },
+  { id:'rules', num:4, label:'Detailed task description & rules', hint:'Spell out exactly what the model should do, including constraints and guardrails.', fire:true },
+  { id:'examples', num:5, label:'Examples', hint:'Show the model what good (and bad) output looks like.', fire:true },
+  { id:'history', num:6, label:'Conversation history', hint:'If continuing a conversation, summarize prior context and decisions.', fire:false },
+  { id:'request', num:7, label:'Immediate task description or request', hint:'The specific ask for this turn. Keep it clear and direct.', fire:false },
+  { id:'thinking', num:8, label:'Thinking step by step / scratchpad', hint:'Ask the model to reason through the problem before answering.', fire:false },
+  { id:'format', num:9, label:'Output formatting', hint:'Specify structure, length, and format of the response.', fire:false },
+  { id:'prefill', num:10, label:'Prefilled response (if any)', hint:'Optionally seed the beginning of the response to steer direction.', fire:false },
+];
+
+// ─── Sample Prompts ───
+const samples = {
+  donor: {
+    desc: 'Analyzing anonymized donor data in spreadsheets for a golf non-profit',
+    task: 'You are a data analyst specializing in non-profit fundraising analytics. You are helping Green Fairways Foundation analyze their anonymized donor data to identify trends, segment donors, and optimize their fundraising strategy. All personally identifiable information has been removed \u2014 donors are identified only by anonymous IDs.',
+    tone: 'Be analytical, precise, and actionable. Present findings with clear data citations. Avoid speculation \u2014 every conclusion should be traceable to the data. Use plain language that a development director without a statistics background can understand.',
+    background: 'The attached Excel file contains 3 years of anonymized donor records with the following columns:\n- donor_id (anonymous identifier)\n- first_gift_date, last_gift_date\n- total_lifetime_giving, gift_count, largest_single_gift, average_gift\n- giving_channel: online, event, mail, peer-to-peer\n- donor_type: individual, corporate, foundation\n- lapsed: TRUE if no gift in past 18 months\n- campaign_source: annual_fund, gala, golf_tournament, major_gifts, planned_giving\n\nTotal records: 2,847 donors\nDate range: January 2023 \u2013 December 2025\nTotal giving in dataset: $4.2M',
+    rules: 'Analyze the donor data and deliver a segmentation strategy with actionable insights.\n\nRequirements:\n1. Create 5\u20137 meaningful donor segments based on behavior patterns (not just giving level)\n2. For each segment: calculate count, % of donors, % of revenue, avg gift, top channel, retention risk\n3. Identify the single highest-ROI reactivation opportunity among lapsed donors\n4. Trend analysis: year-over-year donor count, average gift, and retention rate\n5. Flag any data quality issues you notice\n\nConstraints:\n- Never reference individual donor_ids in your narrative\n- All percentages should be rounded to one decimal place\n- Recommendations must be tied to a specific segment \u2014 no generic advice',
+    examples: 'Strong segment insight:\n"Recurring Loyalists (3+ gifts/year for 2+ years) represent 11.4% of donors but contribute 42.7% of total revenue. Their preferred channel is online (68%), and average gift has grown 8.2% YoY. Retention risk: LOW. Recommendation: Launch a personalized stewardship campaign 6 weeks before the annual ask to reinforce connection before solicitation."\n\nWeak segment insight:\n"Some donors give a lot and some give a little. We should try to get more money from everyone."',
+    history: '',
+    request: 'Start with the segmentation table, then provide narrative insights for the top 3 segments by revenue contribution, followed by the reactivation opportunity analysis, and close with 3 prioritized recommendations for the upcoming campaign.',
+    thinking: 'Before generating the final analysis:\n1. Identify natural clusters in the data based on recency, frequency, and monetary value\n2. Cross-reference segments with giving channel and campaign source\n3. Calculate retention rates per segment\n4. Determine which lapsed segment has the highest historical average gift AND most recent last_gift_date\n5. Check for anomalies (e.g., single large gifts skewing averages)',
+    format: 'Structure the response as:\n1. **Donor Segmentation Table** \u2014 Markdown table with columns: Segment | Count | % Donors | % Revenue | Avg Gift | Top Channel | Retention Risk\n2. **Key Segment Profiles** \u2014 2\u20133 sentences each for the top 3 segments\n3. **Reactivation Opportunity** \u2014 1 paragraph identifying the target group and recommended approach\n4. **Trend Summary** \u2014 3 bullet points on YoY changes\n5. **Prioritized Recommendations** \u2014 Numbered list of 3 actions\n\nTotal length: 600\u2013800 words.',
+    prefill: '## Donor Segmentation Analysis \u2014 Green Fairways Foundation\n\n| Segment | Count | % Donors | % Revenue | Avg Gift | Top Channel | Risk |'
+  },
+  grant: {
+    desc: 'Drafting a program narrative for a community foundation youth mentorship grant',
+    task: 'You are a grant writer with deep expertise in community foundation applications for youth-serving nonprofits. You are helping a small organization draft its program narrative section for a $75,000 grant application.',
+    tone: 'Formal and persuasive, but warm. The reviewers are community foundation board members who care about local impact, equity, and sustainability. Avoid academic jargon \u2014 favor clear, human language that makes the need real.',
+    background: 'Organization: Pathways Mentoring (fictional), a nonprofit serving at-risk youth ages 10\u201317 in three rural counties\nProgram: Weekly one-on-one mentorship pairing adult volunteers with students\nCurrent scale: 85 youth across 3 counties, 40 trained mentors\nOutcomes (last year):\n- 92% of participants improved school attendance\n- 74% reported higher self-confidence (pre/post survey)\n- 88% mentor retention rate\n- 3 participants received college scholarships\n\nBudget request: $75,000 for 12 months\n- Full-time program coordinator: $45,000\n- Mentor training materials: $10,000\n- Transportation stipends: $12,000\n- Evaluation tools: $8,000\n\nFoundation priorities: equity, measurable outcomes, community partnerships\nWord limit for program narrative: 1,200 words',
+    rules: 'Draft the Program Narrative section of the grant application.\n\nRequirements:\n1. Open with a compelling statement of need grounded in local data\n2. Clearly describe the mentorship model and what makes it effective\n3. Connect outcomes directly to the foundation\'s three stated priorities\n4. Include a sustainability plan beyond this 12-month grant\n5. Stay under 1,200 words\n\nConstraints:\n- Do NOT exaggerate outcomes or fabricate statistics\n- Do NOT use filler phrases like "we believe" or "it is our hope"\n- Every claim must be supportable \u2014 flag anything that needs a citation',
+    examples: 'Strong need statement:\n"In Henderson County, 1 in 4 students will not graduate on time. For students without a consistent adult mentor, that number doubles. Last year, 62% of disciplinary referrals involved students with no identified positive adult relationship outside the home."\n\nWeak need statement:\n"There are many problems facing youth in our community and our organization would like to help address some of them through our program."',
+    history: '',
+    request: 'Write the complete program narrative with four sections: Statement of Need, Program Design, Demonstrated Impact, and Sustainability Plan.',
+    thinking: 'Before writing:\n1. What is the single most compelling local data point to lead with?\n2. How does the mentorship model directly address the stated need?\n3. Which of our outcomes align best with each of the foundation\'s three priorities?\n4. What is our strongest argument for sustainability beyond this grant cycle?',
+    format: 'Flowing narrative prose organized under four subheadings:\n- Statement of Need\n- Program Design\n- Demonstrated Impact\n- Sustainability Plan\n\nNo bullet points. Use short paragraphs (3\u20134 sentences each). Bold the subheadings. Total: 900\u20131,200 words.',
+    prefill: '**Statement of Need**\n\nIn the three rural counties served by Pathways Mentoring,'
+  },
+  newsletter: {
+    desc: 'Writing a monthly newsletter for a youth development nonprofit',
+    task: 'You are a communications specialist for a youth-serving nonprofit. You are drafting the monthly email newsletter that goes to donors, volunteers, parents, and community partners.',
+    tone: 'Warm, upbeat, and concise. Celebrate wins without being over-the-top. The readers are busy \u2014 respect their time. Write at an 8th-grade reading level.',
+    background: 'Organization: Bright Futures Youth Center\nMonth: March 2026\nKey updates:\n- Spring break camp served 120 kids (up 30% from last year)\n- New STEM lab opened with $50K donation from local tech company\n- Volunteer spotlight: Maria Gonzalez, 5-year volunteer, mentors 3 teens\n- Upcoming: Annual Gala on April 19, early bird tickets on sale\n- Impact stat: 94% of after-school participants improved math grades\n- Staff hire: New Director of Programs, James Liu, starts April 1',
+    rules: 'Write a complete email newsletter draft.\n\nRequirements:\n1. Subject line + preview text\n2. Brief welcome/intro (2\u20133 sentences)\n3. 3\u20134 content blocks with headers\n4. One clear call-to-action (gala tickets)\n5. Keep total length under 500 words\n\nConstraints:\n- No more than one exclamation mark per paragraph\n- Include at least one specific number or stat in each content block\n- Do not use the word "excited" \u2014 find better alternatives',
+    examples: 'Strong subject line: "120 kids. One incredible spring break. Here\'s what happened."\nWeak subject line: "March Newsletter from Bright Futures"',
+    history: '',
+    request: 'Write the full newsletter draft, ready to paste into an email editor.',
+    thinking: '',
+    format: 'Use this structure:\n**Subject:** [subject line]\n**Preview:** [preview text, under 90 characters]\n\n[Body with clear section breaks using bold headers]\n\nEnd with a P.S. line that reinforces the CTA.',
+    prefill: ''
+  },
+  event: {
+    desc: 'Planning logistics for a volunteer appreciation event',
+    task: 'You are an event coordinator helping a nonprofit plan a volunteer appreciation dinner for 80 guests. The event is 4 weeks away and you need to create a comprehensive planning checklist and timeline.',
+    tone: 'Practical and organized. This is an internal planning document, not a public-facing piece. Be direct and specific \u2014 every item should be actionable with a clear owner and deadline.',
+    background: 'Event: Annual Volunteer Appreciation Dinner\nDate: Saturday, April 25, 2026, 6:00\u20139:00 PM\nVenue: Community Center Grand Hall (capacity 120, AV equipment available)\nBudget: $3,500 total\n- Catering: $2,000 (local caterer confirmed, menu TBD)\n- Decorations/supplies: $500\n- Awards/gifts: $600\n- Printing (programs, signage): $200\n- Contingency: $200\nAttendees: ~80 (60 volunteers + 15 board/staff + 5 speakers)\nSpecial considerations:\n- 3 volunteers receiving "Volunteer of the Year" awards\n- Executive Director giving 10-min keynote\n- Photo booth requested by volunteer committee\n- 6 guests have dietary restrictions (2 vegan, 3 gluten-free, 1 nut allergy)',
+    rules: 'Create a detailed event planning document.\n\nRequirements:\n1. Week-by-week countdown checklist (4 weeks to event day)\n2. Day-of timeline with 30-minute blocks from 3:00 PM setup to 9:30 PM teardown\n3. Budget allocation with line items\n4. Risk mitigation: identify 3 things most likely to go wrong and a backup plan for each\n\nConstraints:\n- Every checklist item must have an owner role (e.g., "Event Lead," "Volunteer Committee," "Caterer")\n- All dietary restrictions must be explicitly addressed in the catering section\n- Include AV requirements for keynote and any slideshow',
+    examples: 'Good checklist item:\n"Week 3 | Send RSVP reminder email to non-responders | Owner: Communications Lead | Deadline: Mon 4/7"\n\nBad checklist item:\n"Send reminders"',
+    history: '',
+    request: 'Generate the complete planning document with all four sections.',
+    thinking: 'Before building the plan:\n1. Work backward from event day to set realistic deadlines\n2. Identify dependencies (e.g., menu must be finalized before printing)\n3. Consider what can go wrong with an 80-person indoor event\n4. Ensure the budget covers everything listed',
+    format: 'Use markdown with clear headers for each section:\n1. **4-Week Countdown Checklist** (table: Week | Task | Owner | Deadline | Status)\n2. **Day-of Timeline** (table: Time | Activity | Lead | Notes)\n3. **Budget Breakdown** (table: Category | Allocated | Notes)\n4. **Risk Mitigation** (3 items, each with Risk, Likelihood, and Backup Plan)',
+    prefill: ''
+  }
+};
+
+// ─── Render Nav & Cards ───
+const navList = document.getElementById('navList');
+const cardContainer = document.getElementById('sectionCards');
+
+sections.forEach(s => {
+  // Nav
+  const nav = document.createElement('div');
+  nav.className = 'nav-item';
+  nav.dataset.id = s.id;
+  nav.innerHTML = `
+    <div class="nav-num">${s.num}</div>
+    <div class="nav-label">${s.label}${s.fire ? '<span class="nav-fire">🔥</span>' : ''}</div>
+    <div class="nav-tokens" id="nav-tok-${s.id}">0</div>
+  `;
+  nav.onclick = () => {
+    document.getElementById(`card-${s.id}`).scrollIntoView({ behavior:'smooth', block:'center' });
+  };
+  navList.appendChild(nav);
+
+  // Card
+  const card = document.createElement('div');
+  card.className = 'section-card';
+  card.id = `card-${s.id}`;
+  card.innerHTML = `
+    <div class="section-card-header">
+      <div class="section-card-title">
+        <div class="num">${s.num}</div>
+        <h3>${s.label}</h3>
+        ${s.fire ? '<span class="fire">🔥</span>' : ''}
+      </div>
+      <div class="token-badge" id="badge-${s.id}">0 tokens (0%)</div>
+    </div>
+    <div class="section-hint">${s.hint}</div>
+    <textarea id="input-${s.id}" placeholder="Enter ${s.label.toLowerCase()} here..." spellcheck="false"></textarea>
+  `;
+  cardContainer.appendChild(card);
+});
+
+// ─── Token Estimation ───
+function estimateTokens(text) {
+  if (!text || !text.trim()) return 0;
+  return Math.ceil(text.length / 4);
+}
+
+function getContextWindow() {
+  return parseInt(document.getElementById('modelSelect').value);
+}
+
+function updateAll() {
+  const window = getContextWindow();
+  const modelName = document.getElementById('modelSelect').selectedOptions[0].dataset.name;
+  let total = 0;
+  const breakdown = [];
+
+  sections.forEach(s => {
+    const val = document.getElementById(`input-${s.id}`).value;
+    const tok = estimateTokens(val);
+    total += tok;
+    breakdown.push({ label: s.label, tokens: tok, id: s.id });
+
+    // Nav tokens
+    document.getElementById(`nav-tok-${s.id}`).textContent = tok;
+    // Badge
+    const pct = total > 0 ? ((tok / Math.max(total,1)) * 100).toFixed(1) : '0';
+    document.getElementById(`badge-${s.id}`).textContent = `${tok.toLocaleString()} tokens (${total > 0 ? ((tok/total)*100).toFixed(1) : 0}%)`;
+  });
+
+  // Stats
+  const pct = window > 0 ? (total / window * 100) : 0;
+  document.getElementById('statWindow').textContent = `${window.toLocaleString()} tokens`;
+  document.getElementById('statTokens').textContent = total.toLocaleString();
+
+  const utilEl = document.getElementById('statUtil');
+  utilEl.textContent = `${total.toLocaleString()} / ${window.toLocaleString()} = ${pct.toFixed(1)}%`;
+  utilEl.className = 'stat-value ' + (pct > 80 ? 'red' : pct > 50 ? 'orange' : 'green');
+
+  // Context bar
+  const bar = document.getElementById('ctxBar');
+  bar.style.width = Math.min(pct, 100) + '%';
+  bar.className = 'context-bar-fill ' + (pct > 80 ? 'red' : pct > 50 ? 'orange' : 'green');
+
+  // Token details
+  const detailsEl = document.getElementById('tokenDetails');
+  detailsEl.innerHTML = breakdown.map(b => `
+    <div class="token-row">
+      <span class="tl">${b.label}</span>
+      <span class="tp">${total > 0 ? ((b.tokens/total)*100).toFixed(1) : 0}%</span>
+      <span class="tv">${b.tokens.toLocaleString()}</span>
+    </div>
+  `).join('');
+
+  // Context rot
+  updateRot(total, window, breakdown);
+}
+
+// ─── Context Rot Simulation ───
+function updateRot(total, window, breakdown) {
+  const pct = window > 0 ? (total / window * 100) : 0;
+  const rulesTokens = breakdown.find(b => b.id === 'rules')?.tokens || 0;
+  const examplesTokens = breakdown.find(b => b.id === 'examples')?.tokens || 0;
+  const historyTokens = breakdown.find(b => b.id === 'history')?.tokens || 0;
+
+  // Rot score: 0-100
+  let rotScore = 0;
+  if (pct > 10) rotScore += pct * 0.4;
+  if (historyTokens > 2000) rotScore += 15;
+  if (total > 8000) rotScore += 10;
+  if (total > 20000) rotScore += 15;
+  if (total > 50000) rotScore += 20;
+  rotScore = Math.min(Math.round(rotScore), 100);
+
+  const isLow = rotScore < 25;
+  const isMed = rotScore >= 25 && rotScore < 60;
+  const isHigh = rotScore >= 60;
+
+  // Card 1: Overall risk
+  const t1 = document.getElementById('rotTitle1');
+  const d1 = document.getElementById('rotDesc1');
+  t1.textContent = isHigh ? 'High Risk' : isMed ? 'Moderate Risk' : 'Low Risk';
+  t1.className = 'rot-card-title ' + (isHigh ? 'danger' : isMed ? 'warn' : 'ok');
+  d1.textContent = isHigh
+    ? 'Your prompt is large relative to the context window. The model may lose track of early instructions, especially task rules and tone.'
+    : isMed
+    ? 'Your prompt is growing. The model should handle this well, but be aware that very early sections may receive less attention in long conversations.'
+    : 'Your prompt is compact. Models will maintain strong attention across all sections.';
+
+  // Card 2: Instruction retention
+  const t2 = document.getElementById('rotTitle2');
+  const d2 = document.getElementById('rotDesc2');
+  const retention = Math.max(60, 100 - rotScore * 0.4);
+  t2.textContent = retention > 90 ? 'Strong Retention' : retention > 75 ? 'Moderate Retention' : 'Weak Retention';
+  t2.className = 'rot-card-title ' + (retention > 90 ? 'ok' : retention > 75 ? 'warn' : 'danger');
+  d2.textContent = `Estimated ~${Math.round(retention)}% of your rules and constraints will be followed accurately. ${retention < 85 ? 'Consider moving critical rules closer to the request (section 7).' : ''}`;
+
+  // Card 3: Example recall
+  const t3 = document.getElementById('rotTitle3');
+  const d3 = document.getElementById('rotDesc3');
+  const exRisk = examplesTokens > 0 && total > 15000;
+  t3.textContent = exRisk ? 'Examples at Risk' : 'Examples Safe';
+  t3.className = 'rot-card-title ' + (exRisk ? 'warn' : 'ok');
+  d3.textContent = exRisk
+    ? `Your examples (${examplesTokens.toLocaleString()} tokens) may be partially forgotten in a prompt this large. Consider trimming to the strongest 1\u20132 examples.`
+    : 'All examples are within the model\u2019s peak attention window.';
+
+  // Card 4: Recommendations
+  const t4 = document.getElementById('rotTitle4');
+  const d4 = document.getElementById('rotDesc4');
+  if (isHigh) {
+    t4.textContent = 'Action Needed'; t4.className = 'rot-card-title danger';
+    d4.textContent = 'Reduce background data, trim conversation history, or split into multiple prompts. Repeat key rules near the request (section 7).';
+  } else if (isMed) {
+    t4.textContent = 'Worth Monitoring'; t4.className = 'rot-card-title warn';
+    d4.textContent = 'Your prompt works, but will degrade over a multi-turn conversation. Keep conversation history concise and re-state key rules periodically.';
+  } else {
+    t4.textContent = 'No Changes Needed'; t4.className = 'rot-card-title ok';
+    d4.textContent = 'Your prompt structure is solid. You have plenty of room for conversation history to grow.';
+  }
+
+  // Meter
+  const rotPctEl = document.getElementById('rotPercent');
+  rotPctEl.textContent = `${isHigh ? 'High' : isMed ? 'Moderate' : 'Low'} (${rotScore}%)`;
+  const rotBar = document.getElementById('rotBar');
+  rotBar.style.width = rotScore + '%';
+  rotBar.style.background = isHigh ? 'var(--red)' : isMed ? 'var(--orange)' : 'var(--green)';
+}
+
+// ─── Event Listeners ───
+sections.forEach(s => {
+  document.getElementById(`input-${s.id}`).addEventListener('input', updateAll);
+});
+
+document.getElementById('modelSelect').addEventListener('change', () => {
+  updateAll();
+});
+
+document.getElementById('toggleDetails').addEventListener('click', function() {
+  const el = document.getElementById('tokenDetails');
+  const open = el.classList.toggle('open');
+  this.textContent = open ? '▾ Token usage details' : '▸ Token usage details';
+});
+
+// ─── Sample Prompt Loader ───
+document.getElementById('sampleSelect').addEventListener('change', function() {
+  const key = this.value;
+  const descEl = document.getElementById('sampleDesc');
+  if (!key) {
+    sections.forEach(s => { document.getElementById(`input-${s.id}`).value = ''; });
+    descEl.textContent = '';
+    updateAll();
+    return;
+  }
+  const sample = samples[key];
+  descEl.textContent = sample.desc;
+  const mapping = {task:'task',tone:'tone',background:'background',rules:'rules',examples:'examples',history:'history',request:'request',thinking:'thinking',format:'format',prefill:'prefill'};
+  Object.keys(mapping).forEach(k => {
+    document.getElementById(`input-${mapping[k]}`).value = sample[k] || '';
+  });
+  updateAll();
+});
+
+// ─── Intersection Observer for Active Nav ───
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id.replace('card-','');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const active = document.querySelector(`.nav-item[data-id="${id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(document.getElementById(`card-${s.id}`)));
+
+// ---- Copy Button for Try It Box ----
+document.getElementById("copyBtn").addEventListener("click", function() {
+  const text = document.getElementById("tryText").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById("copyBtn");
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy Text"; btn.classList.remove("copied"); }, 2000);
+  });
+});
+
+// Init
+updateAll();
+</script>
+</body>
+</html>
